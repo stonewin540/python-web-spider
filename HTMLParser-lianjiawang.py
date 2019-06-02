@@ -10,74 +10,112 @@ from html.parser import HTMLParser
 from urllib import request
 
 
-class LianJiaWangParsingCondition(object):
-    """LianJiaWangItemParser 解析过程中标示应该解析的字段以及是否正在解析的小模型"""
-    def __init__(self, parse_key=None):
-        self.parse_key = parse_key
-        self.isParsing = False
-
-
 class LianJiaWangItemParser (HTMLParser):
 
-    # def __init__(self):
-    #     super(LianJiaWangItemParser, self).__init__()
-    #     self.__main_parsing_condition = LianJiaWangParsingCondition('content__list--item--main')
-    #
-    #     self.__parsing_conditions = []
-    #     self.__parsing_conditions.append(LianJiaWangParsingCondition('content__list--item--title'))
-    #     self.__parsing_conditions.append(LianJiaWangParsingCondition('content__list--item--des'))
-    #     self.__parsing_conditions.append(LianJiaWangParsingCondition('content__list--item--time'))
+    MAIN_ATTR_KEY = 'content__list--item--main'
+    TITLE_ATTR_KEY = 'content__list--item--title'
+    DES_ATTR_KEY = 'content__list--item--des'
+
+    def is_in_main_process(self):
+        if len(self.attrs_stack) <= 0:
+            return False
+
+        is_in = LianJiaWangItemParser.MAIN_ATTR_KEY in self.attrs_stack
+        return is_in
+
+    def is_in_main_title_process(self):
+        if not self.is_in_main_process():
+            return False
+
+        last = self.attrs_stack[-1]
+        return LianJiaWangItemParser.TITLE_ATTR_KEY == last
+
+    def is_in_main_des_process(self):
+        if not self.is_in_main_process():
+            return False
+        last = self.attrs_stack[-1]
+        return LianJiaWangItemParser.DES_ATTR_KEY == last
+
+    def model_in_process(self):
+        if self.model is None:
+            self.model = LianJiaWangModle()
+        return self.model
+
+    def __init__(self):
+        super(LianJiaWangItemParser, self).__init__()
+        self.attrs_stack = []
+        self.tags_stack = []
+        self.model = None
+        self.models = []
 
     # # 调用顺序如下，比如处理标签 div
     # # tag: a, attrs: [('target', '_blank'), ('href', '/zufang/BJ2194649332370907136.html')]
-    # def handle_starttag(self, tag, attrs):
-    #     print('handle_starttag')
-    #     print('tag:', tag)
-    #     print('attrs:', attrs)
-    #
-    #     if 'div' == tag:
-    #         for key, value in attrs:
-    #             if 'class' == key:
-    #                 if value == self.__main_parsing_condition.parse_key:
-    #                     self.__main_parsing_condition.isParsing = True
-    #                     print('---- parsing main ----')
-    #
-    #     if self.__main_parsing_condition.isParsing:
-    #         for key, value in attrs:
-    #             if 'class' == key:
-    #                 for condition in self.__parsing_conditions:
-    #                     if str(value).startswith(condition.parse_key):
-    #                         condition.isParsing = True
+    def handle_starttag(self, tag, attrs):
+        if ('div' == tag) and (not self.is_in_main_process()):
+            is_main = False
+            for attr in attrs:
+                if len(attr) > 1:
+                    value = attr[1]
+                    if value == LianJiaWangItemParser.MAIN_ATTR_KEY:
+                        is_main = True
+                        break
+            if is_main:
+                self.attrs_stack.append(LianJiaWangItemParser.MAIN_ATTR_KEY)
+                self.tags_stack.append(tag)
+                print('---- parsing main ----')
+
+        if self.is_in_main_process():
+            for key, value in attrs:
+                value_str = str(value)
+                # title
+                is_title = -1 != value_str.find(LianJiaWangItemParser.TITLE_ATTR_KEY)
+                if is_title:
+                    self.attrs_stack.append(LianJiaWangItemParser.TITLE_ATTR_KEY)
+                    self.tags_stack.append(tag)
+
+                # des
+                is_des = -1 != value_str.find(LianJiaWangItemParser.DES_ATTR_KEY)
+                if is_des:
+                    self.attrs_stack.append(LianJiaWangItemParser.DES_ATTR_KEY)
+                    self.tags_stack.append(tag)
 
     # data: 整租·苏荷时代 1室1厅 西
     def handle_data(self, data):
-        print(self.get_starttag_text())
-        # striped = str(data).strip()
-        # if self.__main_parsing_condition.isParsing and (len(striped) > 0):
-        #     print('handle_data')
-        #     print('"', data, '"')
-        #     print('end_handle_data')
+        striped = str(data).strip()
+        if len(striped) > 0:
+            if self.is_in_main_title_process():
+                title = '%s %s' % (self.model_in_process().title, striped)
+                self.model_in_process().title = title
+
+            if self.is_in_main_des_process():
+                des = '%s %s' % (self.model_in_process().des, striped)
+                self.model_in_process().des = des
 
     # # tag: a
-    # def handle_endtag(self, tag):
-    #     print('handle_endtag')
-    #     print('tag:', tag)
-    #
-    #     is_subprocess_done = True
-    #     for condition in self.__parsing_conditions:
-    #         if condition.isParsing:
-    #             is_subprocess_done = False
-    #             break
-    #
-    #     if is_subprocess_done and self.__main_parsing_condition.isParsing:
-    #         self.__main_parsing_condition.isParsing = False
-    #         print('---- parsing main done ----')
-    #         print('\n')
+    def handle_endtag(self, tag):
+        if (len(self.tags_stack) > 0) and (tag == self.tags_stack[-1]):
+            poped_attr = self.attrs_stack.pop()
+            poped_tag = self.tags_stack.pop()
+            if LianJiaWangItemParser.MAIN_ATTR_KEY == poped_attr:
+                self.models.append(self.model)
+                self.model = None
+                print('number of models:', len(self.models))
+                print('---- parsing main done ----')
+                print('\n')
 
 
 class LianJiaWangModle(object):
     """数据模型类"""
-    pass
+    def __init__(self):
+        self.title = ''
+        self.des = ''
+        self.time = ''
+        self.features = ''
+        self.price = ''
+
+    def __str__(self):
+        return 'title: %s, des: %s' % (self.title, self.des)
+    __repr__ = __str__
 
 
 # 公用的 UA
