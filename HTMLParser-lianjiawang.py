@@ -19,6 +19,8 @@ class LianJiaWangItemParser (HTMLParser):
     BOTTOM_ATTR_VALUE_KEY = 'content__list--item--bottom'
     PRICE_ATTR_VALUE_KEY = 'content__list--item-price'
 
+    UNKNOWN_PAGE = -1
+
     # conditions
     def is_in_main_process(self):
         if len(self.attrs_stack) <= 0:
@@ -117,6 +119,7 @@ class LianJiaWangItemParser (HTMLParser):
         self.tags_stack = []
         self.model = None
         self.models = []
+        self.number_of_pages = LianJiaWangItemParser.UNKNOWN_PAGE
 
     # # 调用顺序如下，比如处理标签 div
     # # tag: a, attrs: [('target', '_blank'), ('href', '/zufang/BJ2194649332370907136.html')]
@@ -136,6 +139,12 @@ class LianJiaWangItemParser (HTMLParser):
 
         if self.is_in_main_process():
             self.append_with_tag_attrs_if_possible(tag, attrs)
+
+        if (LianJiaWangItemParser.UNKNOWN_PAGE == self.number_of_pages) and ('div' == tag):
+            for key, value in attrs:
+                if 'data-totalpage' == key:
+                    self.number_of_pages = int(value)
+                    break
 
     # data: 整租·苏荷时代 1室1厅 西
     def handle_data(self, data):
@@ -193,6 +202,21 @@ content = response.read().decode('utf-8')
 parser = LianJiaWangItemParser()
 parser.feed(content)
 parser.close()
+print('---- page 1 parsed ----\n')
+
+number_of_pages = parser.number_of_pages
+number_of_pages = 2
+if LianJiaWangItemParser.UNKNOWN_PAGE != number_of_pages:
+    for page in range(2, number_of_pages+1):
+        page_url = '%spg%d' % (url, page)
+        page_req = request.Request(page_url, headers=headers)
+        page_resp = request.urlopen(page_req)
+        page_content = page_resp.read().decode('utf-8')
+
+        page_parser = LianJiaWangItemParser()
+        page_parser.feed(page_content)
+        page_parser.close()
+        print('---- page %d parsed ----\n' % page)
 
 
 # if __name__ == '__main__':
