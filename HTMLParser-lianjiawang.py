@@ -204,19 +204,19 @@ parser.feed(content)
 parser.close()
 print('---- page 1 parsed ----\n')
 
-number_of_pages = parser.number_of_pages
-number_of_pages = 2
-if LianJiaWangItemParser.UNKNOWN_PAGE != number_of_pages:
-    for page in range(2, number_of_pages+1):
-        page_url = '%spg%d' % (url, page)
-        page_req = request.Request(page_url, headers=headers)
-        page_resp = request.urlopen(page_req)
-        page_content = page_resp.read().decode('utf-8')
-
-        page_parser = LianJiaWangItemParser()
-        page_parser.feed(page_content)
-        page_parser.close()
-        print('---- page %d parsed ----\n' % page)
+# number_of_pages = parser.number_of_pages
+# number_of_pages = 2
+# if LianJiaWangItemParser.UNKNOWN_PAGE != number_of_pages:
+#     for page in range(2, number_of_pages+1):
+#         page_url = '%spg%d' % (url, page)
+#         page_req = request.Request(page_url, headers=headers)
+#         page_resp = request.urlopen(page_req)
+#         page_content = page_resp.read().decode('utf-8')
+#
+#         page_parser = LianJiaWangItemParser()
+#         page_parser.feed(page_content)
+#         page_parser.close()
+#         print('---- page %d parsed ----\n' % page)
 
 
 # if __name__ == '__main__':
