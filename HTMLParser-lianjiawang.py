@@ -8,6 +8,7 @@ __author__ = "stone"
 
 from html.parser import HTMLParser
 from urllib import request
+from LianJiaWangModel import LianJiaWangModel
 
 
 class LianJiaWangItemParser (HTMLParser):
@@ -41,7 +42,7 @@ class LianJiaWangItemParser (HTMLParser):
 
     def model_in_process(self):
         if self.model is None:
-            self.model = LianJiaWangModle()
+            self.model = LianJiaWangModel()
         return self.model
 
     # data refreshing
@@ -164,30 +165,6 @@ class LianJiaWangItemParser (HTMLParser):
                 print('\n')
 
 
-class LianJiaWangModle(object):
-    """数据模型类"""
-    def __init__(self):
-        self.title = ''
-        self.des = ''
-        self.time = ''
-        """命名 bottom 是为了跟 HTML 代码中的名字保持一致并方便批量赋值；但其实的意义是 features"""
-        self.bottom = ''
-        self.price = ''
-
-    def __str__(self):
-        return '%8s: %s\n' \
-               '%8s: %s\n' \
-               '%8s: %s\n' \
-               '%8s: %s\n' \
-               '%8s: %s' % \
-               ('title', self.title,
-                'des', self.des,
-                'time', self.time,
-                'bottom', self.bottom,
-                'price', self.price)
-    __repr__ = __str__
-
-
 # 公用的 UA
 user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) " + \
             "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.1 Safari/605.1.15"
@@ -202,6 +179,7 @@ content = response.read().decode('utf-8')
 parser = LianJiaWangItemParser()
 parser.feed(content)
 parser.close()
+print('number of pages: %d' % parser.number_of_pages)
 print('---- page 1 parsed ----\n')
 
 # number_of_pages = parser.number_of_pages
