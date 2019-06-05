@@ -149,6 +149,8 @@ class LianJiaWangItemParser (HTMLParser):
     # data: 整租·苏荷时代 1室1厅 西
     def handle_data(self, data):
         self.refresh_model_with_data(data)
+        if self.is_in_other_process(LianJiaWangItemParser.TITLE_ATTR_VALUE_KEY):
+            self.model_in_process().set_href_with_starttag(self.get_starttag_text())
 
     # tag: a
     def handle_endtag(self, tag):

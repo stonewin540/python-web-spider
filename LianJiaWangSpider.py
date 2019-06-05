@@ -6,6 +6,7 @@ __author__ = 'stone'
 
 from urllib import request
 from LianJiaWangHTMLParser import LianJiaWangItemParser
+import LianJiaWangConfig
 
 
 def start():
@@ -13,6 +14,7 @@ def start():
     user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) " + \
                  "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.1 Safari/605.1.15"
     headers = {'User-Agent': user_agent}
+    base_url = LianJiaWangConfig.BASE_URL
 
     #
     parser = LianJiaWangItemParser()
@@ -20,7 +22,7 @@ def start():
     number_of_pages = 1
     page = 1
     while page <= number_of_pages:
-        url = "https://bj.lianjia.com/zufang/pg%d" % page
+        url = "%szufang/pg%d" % (base_url, page)
         req = request.Request(url, headers=headers)
         resp = request.urlopen(req)
         content = resp.read().decode('utf-8')
